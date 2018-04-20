@@ -2,8 +2,8 @@ import copy
 import numpy as np
 
 from keras import backend as K
-from keras.engine.training import objectives, standardize_input_data, slice_X, \
-    standardize_sample_weights, standardize_class_weights, standardize_weights, check_loss_and_target_compatibility
+from keras.engine.training import losses, _standardize_input_data as standardize_input_data , _slice_arrays, \
+    _standardize_sample_weights as standardize_sample_weights , _standardize_class_weights as standardize_class_weights , _standardize_weights as standardize_weights, _check_loss_and_target_compatibility as check_loss_and_target_compatibility
 
 
 def smooth_gan_labels(y):
@@ -29,15 +29,15 @@ def _standardize_user_data(model, x, y,
                         ' Use `model.compile(optimizer, loss)`.')
 
     output_shapes = []
-    for output_shape, loss_fn in zip(model.internal_output_shapes, model.loss_functions):
+    for output_shape, loss_fn in zip(model._internal_output_shapes, model.loss_functions):
         if loss_fn.__name__ == 'sparse_categorical_crossentropy':
             output_shapes.append(output_shape[:-1] + (1,))
-        elif getattr(objectives, loss_fn.__name__, None) is None:
+        elif getattr(losses, loss_fn.__name__, None) is None:
             output_shapes.append(None)
         else:
             output_shapes.append(output_shape)
     x = standardize_input_data(x, model.input_names,
-                               model.internal_input_shapes,
+                               model._internal_input_shapes,
                                exception_prefix='model input')
     y = standardize_input_data(y, model.output_names,
                                output_shapes,
@@ -56,7 +56,7 @@ def _standardize_user_data(model, x, y,
     '''
     # check_array_lengths(x, y, sample_weights)
 
-    check_loss_and_target_compatibility(y, model.loss_functions, model.internal_output_shapes)
+    check_loss_and_target_compatibility(y, model.loss_functions, model._internal_output_shapes)
     if model.stateful and batch_size:
         if x[0].shape[0] % batch_size != 0:
             raise Exception('In a stateful network, '
@@ -67,7 +67,7 @@ def _standardize_user_data(model, x, y,
     return x, y, sample_weights
 
 
-def fit(model, x, y, batch_size=32, nb_epoch=10, verbose=1, callbacks=[],
+def fit(model, x, y, batch_size=32, epochs=10, verbose=1, callbacks=[],
         validation_split=0., validation_data=None, shuffle=True,
         class_weight=None, sample_weight=None):
     '''Trains the model for a fixed number of epochs (iterations on a dataset).
@@ -193,7 +193,7 @@ def fit(model, x, y, batch_size=32, nb_epoch=10, verbose=1, callbacks=[],
 
     # delegate logic to _fit_loop
     return model._fit_loop(f, ins, out_labels=out_labels,
-                           batch_size=batch_size, nb_epoch=nb_epoch,
+                           batch_size=batch_size, epochs=epochs,
                            verbose=verbose, callbacks=callbacks,
                            val_f=val_f, val_ins=val_ins, shuffle=shuffle,
                            callback_metrics=callback_metrics)

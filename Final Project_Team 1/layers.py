@@ -34,6 +34,8 @@ class Normalize(Layer):
 
     def get_output_shape_for(self, input_shape):
         return input_shape
+    def compute_output_shape(self, input_shape):
+        return input_shape
 
 
 class Denormalize(Layer):
@@ -52,6 +54,8 @@ class Denormalize(Layer):
         return (x + 1) * 127.5
 
     def get_output_shape_for(self, input_shape):
+        return input_shape
+    def compute_output_shape(self, input_shape):
         return input_shape
 
 
@@ -123,6 +127,13 @@ class SubPixelUpscaling(Layer):
         return y
 
     def get_output_shape_for(self, input_shape):
+        if K.image_dim_ordering() == "th":
+            b, k, r, c = input_shape
+            return (b, self.channels, r * self.r, c * self.r)
+        else:
+            b, r, c, k = input_shape
+            return (b, r * self.r, c * self.r, self.channels)
+    def compute_output_shape(self, input_shape):
         if K.image_dim_ordering() == "th":
             b, k, r, c = input_shape
             return (b, self.channels, r * self.r, c * self.r)

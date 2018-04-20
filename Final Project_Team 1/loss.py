@@ -1,5 +1,5 @@
 from keras import backend as K
-from keras.regularizers import ActivityRegularizer
+from keras.regularizers import L1L2 as ActivityRegularizer
 import numpy as np
 
 dummy_loss_val = K.variable(0.0)
@@ -30,7 +30,7 @@ def PSNRLoss(y_true, y_pred):
     However, since we are scaling our input, MAXp = 1. Therefore 20 * log10(1) = 0.
     Thus we remove that component completely and only compute the remaining MSE component.
     """
-    return 48.1308036087 - 10. * np.log10(K.mean(K.square(y_pred - y_true)))
+    return 48.1308036087 - 10. * (10.0 * K.log(1.0 /(K.mean(K.square(y_pred - y_true)))) / K.log(10.0))
 
 
 class ContentVGGRegularizer(ActivityRegularizer):
@@ -87,9 +87,9 @@ class TVRegularizer(ActivityRegularizer):
         if K.image_dim_ordering() == 'th':
             a = K.square(x[:, :, :self.img_width - 1, :self.img_height - 1] - x[:, :, 1:, :self.img_height - 1])
             b = K.square(x[:, :, :self.img_width - 1, :self.img_height - 1] - x[:, :, :self.img_width - 1, 1:])
-        else:
+        else:                       
             a = K.square(x[:, :self.img_width - 1, :self.img_height - 1, :] - x[:, 1:, :self.img_height - 1, :])
-            b = K.square(x[:, :self.img_width - 1, :self.img_height - 1, :] - x[:, :self.img_width - 1, 1:, :])
+            b = K.square(x[:, :self.img_width - 1, :self.img_height - 1, :] - x[:, :self.img_width - 1, 1:, :])           
         loss = self.weight * K.mean(K.sum(K.pow(a + b, 1.25)))
         return loss
 
